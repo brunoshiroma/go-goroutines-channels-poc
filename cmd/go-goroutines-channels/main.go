@@ -79,6 +79,20 @@ func primes(values []int64, sliceSize uint, c chan []int64) {
 
 }
 
+func createGoroutinesChannel(maxGoroutinesInt int32) chan int {
+	var newMaxGoroutines chan int
+
+	if maxGoroutinesInt == 0 { // 0 = use number os cpu/threads
+		threads := runtime.NumCPU()
+		newMaxGoroutines = make(chan int, threads) // get the actual number os core/threads on cpu
+		fmt.Printf("Using the core/threads of cpu %d to maxGoroutines\n", threads)
+	} else {
+		newMaxGoroutines = make(chan int, maxGoroutinesInt)
+		fmt.Printf("Using the passed value of maxGoroutines %d\n", maxGoroutinesInt)
+	}
+	return newMaxGoroutines
+}
+
 func main() {
 
 	var (
@@ -106,15 +120,6 @@ func main() {
 		}
 	}
 
-	if maxGoroutinesInt == 0 { // 0 = use number os cpu/threads
-		threads := runtime.NumCPU()
-		maxGoroutines = make(chan int, threads) // get the actual number os core/threads on cpu
-		fmt.Printf("Using the core/threads of cpu %d to maxGoroutines\n", threads)
-	} else {
-		maxGoroutines = make(chan int, maxGoroutinesInt)
-		fmt.Printf("Using the passed value of maxGoroutines %d\n", maxGoroutinesInt)
-	}
-
 	fmt.Printf("Search for primes 0 to %d, on slices of %d\n", maxPrime, sliceSize)
 
 	c := make(chan []int64)
@@ -123,6 +128,9 @@ func main() {
 	for index := range values {
 		values[index] = int64(index)
 	}
+
+	// initialize the goroutine channel
+	maxGoroutines = createGoroutinesChannel(int32(maxGoroutinesInt))
 
 	fmt.Printf("Initializing search for %d primes\n", len(values))
 	initTime := time.Now()
